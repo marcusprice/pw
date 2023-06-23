@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -12,10 +13,11 @@ import (
 
 const UNKNOWN_COMMAND_MESSAGE = "unknown action, list of available actions"
 
-var passwordStore store.Store
+var passwordStore *store.Store
 
 func main() {
-	passwordStore.Init()
+	passwordData := getPasswordData()
+	passwordStore = store.NewPasswordStore(passwordData)
 
 	var action string = ""
 	argsPresent := len(os.Args) - 1
@@ -75,20 +77,13 @@ func saveNewPassword(service string, pwd string) (ok bool, err error) {
 }
 
 func getPassword(service string) {
-	pwd, err := passwordStore.Get(service)
-	if err != nil {
+	if pwd, err := passwordStore.Get(service); err != nil {
 		fmt.Println(err)
-		return
+	} else {
+		decryptedPassword, _ := encryption.Decrypt(pwd)
+		util.CopyToClipboard(decryptedPassword)
+		fmt.Println("password copied to clipboard!")
 	}
-
-	decryptedPassword, _ := encryption.Decrypt(pwd)
-
-	err = util.CopyToClipboard(decryptedPassword)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println("password copied to clipboard!")
 }
 
 func editPassword(service string, pwd string) {
@@ -112,4 +107,21 @@ func printHelpMenu() {
 func printUnknownCommand() {
 	fmt.Println(UNKNOWN_COMMAND_MESSAGE)
 	printHelpMenu()
+}
+
+func getPasswordData() store.PasswordData {
+	var passwordData store.PasswordData
+
+	if util.DataFileExists() {
+		file, err := util.ReadDataFile()
+		if err != nil {
+			panic(err)
+		} else {
+			json.Unmarshal(file, &passwordData)
+		}
+	} else {
+		util.CreateDataFile()
+		passwordData = make(map[string]string)
+	}
+	return passwordData
 }

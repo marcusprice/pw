@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -10,18 +11,16 @@ var jsonPath = os.Getenv("HOME") + "/.data/pw/"
 var jsonName = "data.json"
 var jsonLocation = jsonPath + jsonName
 
-func CopyToClipboard(pwd string) error {
-	echo := exec.Command("echo", pwd)
+func CopyToClipboard(pwd string) {
+	pwdBuffer := bytes.Buffer{}
+	pwdBuffer.Write([]byte(pwd))
+
 	pbCopy := exec.Command("pbcopy")
-	pipe, _ := echo.StdoutPipe()
-	defer pipe.Close()
+	pbCopy.Stdin = &pwdBuffer
 
-	pbCopy.Stdin = pipe
-
-	echo.Start()
-	pbCopy.Start()
-
-	return nil
+	if err := pbCopy.Start(); err != nil {
+		panic(err)
+	}
 }
 
 func WriteJson(passwordMap map[string]string) error {

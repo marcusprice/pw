@@ -1,28 +1,13 @@
 package store
 
 import (
-	"encoding/json"
 	"errors"
-
-	"github.com/marcusprice/pw/util"
 )
 
-type Store struct {
-	data map[string]string
-}
+type PasswordData map[string]string
 
-func (store *Store) Init() {
-	if util.DataFileExists() {
-		file, err := util.ReadDataFile()
-		if err != nil {
-			panic(err)
-		} else {
-			json.Unmarshal(file, &store.data)
-		}
-	} else {
-		util.CreateDataFile()
-		store.data = make(map[string]string)
-	}
+type Store struct {
+	data PasswordData
 }
 
 func (store Store) ServiceExists(service string) bool {
@@ -49,4 +34,8 @@ func (store *Store) Delete(service string) {
 
 func (store Store) GetStore() map[string]string {
 	return store.data
+}
+
+func NewPasswordStore(passwordData PasswordData) *Store {
+	return &Store{data: passwordData}
 }
