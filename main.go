@@ -54,7 +54,7 @@ func main() {
 		pwd, _ := encryption.Encrypt(os.Args[3])
 
 		if action == "new" {
-			_, err := saveNewPassword(encryptedService, pwd)
+			_, err := newPassword(encryptedService, pwd)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -67,17 +67,17 @@ func main() {
 	}
 }
 
-func saveNewPassword(service string, pwd string) (ok bool, err error) {
+func newPassword(service string, pwd string) (ok bool, err error) {
 	if passwordStore.ServiceExists(service) {
 		return false, errors.New("service already exists")
 	}
-	passwordStore.Add(service, pwd)
+	passwordStore.Write(service, pwd)
 	util.WriteJson(passwordStore.GetStore())
 	return true, nil
 }
 
 func getPassword(service string) {
-	if pwd, err := passwordStore.Get(service); err != nil {
+	if pwd, err := passwordStore.Read(service); err != nil {
 		fmt.Println(err)
 	} else {
 		decryptedPassword, _ := encryption.Decrypt(pwd)
@@ -87,7 +87,7 @@ func getPassword(service string) {
 }
 
 func editPassword(service string, pwd string) {
-	passwordStore.Add(service, pwd)
+	passwordStore.Write(service, pwd)
 	util.WriteJson(passwordStore.GetStore())
 }
 
