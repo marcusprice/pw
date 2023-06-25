@@ -63,6 +63,7 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			}
+			fmt.Println("new password saved for" + service)
 		} else if action == "edit" {
 			editPassword(encryptedService, encryptedPassword)
 			fmt.Println(service + " password updated")
