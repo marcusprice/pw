@@ -16,6 +16,11 @@ const UNKNOWN_COMMAND_MESSAGE = "unknown action, list of available actions"
 var passwordStore *store.Store
 
 func main() {
+	key, err := util.GetKey()
+	if err != nil {
+		key = encryption.GenerateKey()
+		util.SetKey(key)
+	}
 	passwordData := getPasswordData()
 	passwordStore = store.NewPasswordStore(passwordData)
 
@@ -38,9 +43,9 @@ func main() {
 
 	} else if argsPresent == 2 {
 
-		service, _ := encryption.Encrypt(os.Args[2])
+		service := encryption.Encrypt(os.Args[2], key)
 		if action == "get" {
-			getPassword(service)
+			getPassword(service, key)
 		} else if action == "delete" {
 			deletePassword(service)
 		} else {
@@ -50,16 +55,16 @@ func main() {
 	} else if argsPresent == 3 {
 
 		service := os.Args[2]
-		encryptedService, _ := encryption.Encrypt(service)
-		pwd, _ := encryption.Encrypt(os.Args[3])
+		encryptedService := encryption.Encrypt(service, key)
+		encryptedPassword := encryption.Encrypt(os.Args[3], key)
 
 		if action == "new" {
-			_, err := newPassword(encryptedService, pwd)
+			_, err := newPassword(encryptedService, encryptedPassword)
 			if err != nil {
 				fmt.Println(err)
 			}
 		} else if action == "edit" {
-			editPassword(encryptedService, pwd)
+			editPassword(encryptedService, encryptedPassword)
 			fmt.Println(service + " password updated")
 		} else {
 			printUnknownCommand()
@@ -76,11 +81,11 @@ func newPassword(service string, pwd string) (ok bool, err error) {
 	return true, nil
 }
 
-func getPassword(service string) {
+func getPassword(service string, key string) {
 	if pwd, err := passwordStore.Read(service); err != nil {
 		fmt.Println(err)
 	} else {
-		decryptedPassword, _ := encryption.Decrypt(pwd)
+		decryptedPassword := encryption.Decrypt(pwd, key)
 		util.CopyToClipboard(decryptedPassword)
 		fmt.Println("password copied to clipboard!")
 	}

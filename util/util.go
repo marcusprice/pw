@@ -3,8 +3,10 @@ package util
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var jsonPath = os.Getenv("HOME") + "/.data/pw/"
@@ -52,4 +54,25 @@ func DataFileExists() bool {
 	} else {
 		return true
 	}
+}
+
+func SetKey(key string) {
+	user := os.Getenv("USER")
+	sec := exec.Command("security", "add-generic-password", "-s", "pw key", "-a", user, "-w", key)
+	if err := sec.Run(); err != nil {
+		panic(err)
+	}
+}
+
+func GetKey() (string, error) {
+	user := os.Getenv("USER")
+	key, err := exec.Command("security", "find-generic-password", "-w", "-s", "pw key", "-a", user).Output()
+	if err != nil {
+		if err.Error() == "exit status 44" {
+			return "", errors.New("key not found")
+		}
+
+		panic(err)
+	}
+	return strings.ReplaceAll(string(key), "\n", ""), nil
 }
